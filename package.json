@@ -1,0 +1,13 @@
+{
+  "name": "cloud-so-app",
+  "version": "1.0.0",
+  "description": "Aplicação web que exibe informações do sistema operacional via Node.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>cloud-so-app | Monitor do Sistema</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --surface2: #1a2336;
+      --border: #1e2d45;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --font-mono: 'Space Mono', monospace;
+      --font-display: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo-area h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .logo-area h1 span {
+      color: var(--accent);
+    }
+
+    .logo-area p {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent3);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Grid layout */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.10s; }
+    .card:nth-child(3) { animation-delay: 0.15s; }
+    .card:nth-child(4) { animation-delay: 0.20s; }
+    .card:nth-child(5) { animation-delay: 0.25s; }
+    .card:nth-child(6) { animation-delay: 0.30s; }
+    .card:nth-child(7) { animation-delay: 0.35s; }
+    .card:nth-child(8) { animation-delay: 0.40s; }
+
+    .card-icon {
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+    }
+
+    .card-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .card-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      word-break: break-all;
+      line-height: 1.2;
+    }
+
+    .card-value.green  { color: var(--accent3); }
+    .card-value.purple { color: #a78bfa; }
+    .card-value.yellow { color: var(--warn); }
+    .card-value.white  { color: var(--text); font-size: 1.1rem; }
+
+    .card-sub {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* Memory bar */
+    .mem-bar-wrap {
+      margin-top: 14px;
+      background: var(--surface2);
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .mem-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent3), var(--accent));
+      transition: width 1s ease;
+    }
+
+    /* Wide card */
+    .card-wide {
+      grid-column: 1 / -1;
+    }
+
+    /* Timestamp row */
+    .ts-row {
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .ts-row span {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .refresh-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .refresh-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* Skeleton loader */
+    .skeleton .card-value,
+    .skeleton .card-sub {
+      background: var(--surface2);
+      border-radius: 4px;
+      color: transparent;
+      animation: shimmer 1.2s infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { opacity: 0.4; }
+      50%  { opacity: 0.8; }
+      100% { opacity: 0.4; }
+    }
+
+    .error-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: #f87171;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-area">
+      <h1>cloud<span>-so-</span>app</h1>
+      <p>Monitor de Sistema Operacional &mdash; Node.js + Express</p>
+    </div>
+    <div class="status-pill">
+      <span class="dot"></span>
+      <span id="env-label">carregando...</span>
+    </div>
+  </header>
+
+  <div class="grid" id="grid">
+    <!-- Preenchido via JS -->
+  </div>
+
+  <div class="ts-row">
+    <span id="timestamp">Última atualização: —</span>
+    <button class="refresh-btn" onclick="fetchInfo()">↻ Atualizar</button>
+  </div>
+
+</div>
+
+<script>
+  async function fetchInfo() {
+    const grid = document.getElementById('grid');
+
+    // Skeleton
+    grid.innerHTML = Array(8).fill(`
+      <div class="card skeleton">
+        <div class="card-icon">⬛</div>
+        <div class="card-label">carregando</div>
+        <div class="card-value">██████</div>
+        <div class="card-sub">████████████</div>
+      </div>
+    `).join('');
+
+    try {
+      const res = await fetch('/api/sysinfo');
+      if (!res.ok) throw new Error('Falha na requisição');
+      const d = await res.json();
+
+      document.getElementById('env-label').textContent =
+        d.environment === 'local' ? 'Ambiente: Local' : `Ambiente: ${d.environment}`;
+
+      document.getElementById('timestamp').textContent =
+        `Última atualização: ${d.timestamp}`;
+
+      const memPct = parseFloat(d.memUsagePercent);
+
+      grid.innerHTML = `
+        <div class="card">
+          <div class="card-icon">🖥️</div>
+          <div class="card-label">Hostname</div>
+          <div class="card-value white">${d.hostname}</div>
+          <div class="card-sub">Nome da máquina na rede</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🐧</div>
+          <div class="card-label">Plataforma</div>
+          <div class="card-value purple">${d.platform}</div>
+          <div class="card-sub">Release: ${d.release}</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⚙️</div>
+          <div class="card-label">Arquitetura</div>
+          <div class="card-value">${d.arch}</div>
+          <div class="card-sub">Arquitetura do processador</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🔲</div>
+          <div class="card-label">CPUs</div>
+          <div class="card-value green">${d.cpuCount}</div>
+          <div class="card-sub">${d.cpuModel}</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📦</div>
+          <div class="card-label">Memória Total</div>
+          <div class="card-value">${d.totalMemGB} GB</div>
+          <div class="card-sub">RAM disponível no sistema</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🟢</div>
+          <div class="card-label">Memória Livre</div>
+          <div class="card-value green">${d.freeMemGB} GB</div>
+          <div class="card-sub">RAM não utilizada</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⏱️</div>
+          <div class="card-label">Uptime do Sistema</div>
+          <div class="card-value yellow">${d.uptime}</div>
+          <div class="card-sub">Tempo desde o último boot</div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🟩</div>
+          <div class="card-label">Versão do Node.js</div>
+          <div class="card-value purple">${d.nodeVersion}</div>
+          <div class="card-sub">Runtime da aplicação</div>
+        </div>
+
+        <div class="card card-wide">
+          <div class="card-icon">💾</div>
+          <div class="card-label">Uso de Memória RAM — ${d.memUsagePercent}% utilizado</div>
+          <div class="card-value" style="font-size:1rem; margin-bottom:10px;">
+            Usada: ${d.usedMemGB} GB &nbsp;/&nbsp; Livre: ${d.freeMemGB} GB &nbsp;/&nbsp; Total: ${d.totalMemGB} GB
+          </div>
+          <div class="mem-bar-wrap">
+            <div class="mem-bar-fill" style="width: ${memPct}%"></div>
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      grid.innerHTML = `<div class="error-msg card-wide">❌ Erro ao carregar dados: ${e.message}</div>`;
+    }
+  }
+
+  fetchInfo();
+  setInterval(fetchInfo, 10000); // Atualiza a cada 10s
+</script>
+</body>
+</html>
